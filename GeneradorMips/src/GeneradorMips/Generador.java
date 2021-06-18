@@ -13,6 +13,11 @@ public class Generador {
     private String[] source;
     
     public Generador(String source){
-        this.source = source.split(";");
+        this.source = source.split("\n");
+    }
+
+    String getCodigoMips() {
+        String result = "No hay nada todavía";
+        return result; 
     }
 }
