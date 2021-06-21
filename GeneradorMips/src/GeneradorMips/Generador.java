@@ -71,4 +71,17 @@ public class Generador {
         
     }
     
+    private String toStringSource(){
+        String result = "";
+        for (String element :source){
+            result+= "["+ element + "]";
+        }
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Generador{" + "\nsource=" + toStringSource() + ",\npila=" + pila + '}';
+    }
+    
 }

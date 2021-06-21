@@ -45,5 +45,12 @@ public class Token {
         this.posicion = posicion;
     }
     
+
+    @Override
+    public String toString() {
+        return "{Token " + "id=" + id + ", size=" + size + ", posicion=" + posicion + "}\n";
+    }
+    
+    
     
 }
