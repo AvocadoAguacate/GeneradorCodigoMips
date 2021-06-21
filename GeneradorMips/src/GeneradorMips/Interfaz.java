@@ -24,6 +24,7 @@ public class Interfaz extends javax.swing.JFrame {
      */
     public Interfaz() {
         initComponents();
+        cargarArchivoPrueba();
     }
 
     /**
@@ -191,6 +192,19 @@ public class Interfaz extends javax.swing.JFrame {
                 new Interfaz().setVisible(true);
             }
         });
+    }
+    
+    private void cargarArchivoPrueba(){
+        String path = "D:/Documentos/PruebasProyecto/mipsTest.txt";
+        File archivo = new File(path);
+        try {
+            String ST = new String(Files.readAllBytes(archivo.toPath()));
+            TextArea3Direcciones.setText(ST);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(Interfaz.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Interfaz.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
