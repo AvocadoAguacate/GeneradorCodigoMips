@@ -5,8 +5,10 @@
  */
 package GeneradorMips;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.logging.Level;
@@ -22,9 +24,12 @@ public class Interfaz extends javax.swing.JFrame {
     /**
      * Creates new form Interfaz
      */
+    
+    private String nombreArchivo;
+    
     public Interfaz() {
         initComponents();
-        cargarArchivoPrueba();
+        cargarArchivoPrueba(); //Comentar antes de entregar 
     }
 
     /**
@@ -135,7 +140,7 @@ public class Interfaz extends javax.swing.JFrame {
         JFileChooser chooser = new JFileChooser();
         chooser.showOpenDialog(null);
         File archivo = new File(chooser.getSelectedFile().getAbsolutePath());
-
+        nombreArchivo = chooser.getSelectedFile().getName();
         try {
             String ST = new String(Files.readAllBytes(archivo.toPath()));
             TextArea3Direcciones.setText(ST);
@@ -157,6 +162,22 @@ public class Interfaz extends javax.swing.JFrame {
         String codigo3direcciones = TextArea3Direcciones.getText();
         Generador generador = new Generador(codigo3direcciones);
         TextAreaMips.setText(generador.getCodigoMips());
+        nombreArchivo = nombreArchivo.replace(".txt", ".s");
+        try {
+            String ruta = "D:/Documentos/ResultadosMips/" + nombreArchivo;
+            String contenido = generador.getCodigoMips();
+            File file = new File(ruta);
+            if (!file.exists()) {
+                file.createNewFile();
+                System.out.println("Creando a " + nombreArchivo);
+            }
+            FileWriter fw = new FileWriter(file);
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(contenido);
+            bw.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }//GEN-LAST:event_jButton2ActionPerformed
 
     /**
@@ -205,6 +226,7 @@ public class Interfaz extends javax.swing.JFrame {
         } catch (IOException ex) {
             Logger.getLogger(Interfaz.class.getName()).log(Level.SEVERE, null, ex);
         }
+        nombreArchivo = "mipsTest.txt";
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
