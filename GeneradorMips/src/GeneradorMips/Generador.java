@@ -167,20 +167,54 @@ public class Generador {
                 p2.contains("==") || p2.contains("&") ||
                 p2.contains("|")){
             comparacionesCase(id,p2,numeroLinea);
+        } else if(p2.contains("/")){
+            divisionCase(id,p2);
+        } else if(p2.contains("*")){
+            multiplicacionCase(id,p2);
+        } else if(p2.contains("~")){
+            modCase(id,p2);
         } else {
-            String suma = p2 + " + 0";
-            sumaCase(id,suma);
+            liCase(id,p2);
         }
     }
     
-    private void paramCase(String id, String p2){
-        
+    private void modCase(String id,String p2){
+        String idMips = "$t" + getTemporalInt(id);
+        String[] operandos = p2.split("~");
+        String operando1 = getOperando(operandos[0].replace(" ", ""));
+        String operando2 = getOperando(operandos[1].replace(" ", ""));
+        text += "div " + operando1 + ", " + operando2 + "\n";
+        text += "mfhi " + idMips + "\n";
+    }
+    
+    private void multiplicacionCase(String id, String p2) {
+        String idMips = "$t" + getTemporalInt(id);
+        String[] operandos = p2.split("*");
+        String operando1 = getOperando(operandos[0].replace(" ", ""));
+        String operando2 = getOperando(operandos[1].replace(" ", ""));
+        text += "mult " + operando1 + ", " + operando2 + "\n";
+        text += "mflo " + idMips + "\n";
+    }
+    
+    private void divisionCase(String id,String p2){
+        String idMips = "$t" + getTemporalInt(id);
+        String[] operandos = p2.split("/");
+        String operando1 = getOperando(operandos[0].replace(" ", ""));
+        String operando2 = getOperando(operandos[1].replace(" ", ""));
+        text += "div " + operando1 + ", " + operando2 + "\n";
+        text += "mflo " + idMips + "\n";
     }
     
     private void liCase(String id, String p2){
         String p2Clear = p2.replaceAll(" ", "");
         String idMips = "$t" + getTemporalInt(id);
-        text += "li "+ idMips + ", " + p2Clear + "\n"; 
+        String suma = "";
+        if (p2.contains("Int_")) {
+            suma = p2Clear + " + 0";
+            sumaCase(id,suma);
+        } else {
+            text += "addi " + idMips + ",$zero," + p2Clear + "\n";
+        }
     }
     
     private void comparacionesCase(String id, String p2, int numeroLinea){
@@ -378,5 +412,6 @@ public class Generador {
         }
         return result;
     }
+
     
 }
