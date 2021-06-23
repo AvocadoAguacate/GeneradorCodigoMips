@@ -189,7 +189,7 @@ public class Generador {
     
     private void multiplicacionCase(String id, String p2) {
         String idMips = "$t" + getTemporalInt(id);
-        String[] operandos = p2.split("*");
+        String[] operandos = p2.split("\\*");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
         text += "mult " + operando1 + ", " + operando2 + "\n";
