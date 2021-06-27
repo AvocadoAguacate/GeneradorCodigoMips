@@ -50,9 +50,9 @@ public class Generador {
      * @return  token buscado o null si no existe en la pila
      */
     private Token getToken(String id){
-        for (Token token : pila){
-            if(token.getId().compareTo(id) == 0){
-                return token;
+        for (int i = pila.size()-1; i > -1;i--){
+            if(pila.get(i).getId().compareTo(id) == 0){
+                return pila.get(i);
             }
         }
         return null;
@@ -300,6 +300,7 @@ public class Generador {
     
     private int getTemporalInt(String id){
         int resultado = -1;
+        //Recorrido para buscar temporales vacios
         for(int i = 0; i < temporalesInt.length; i++){
             if(temporalesInt[i].length() == 0){
                 temporalesInt[i] = id;
@@ -311,6 +312,7 @@ public class Generador {
         if(ultimoTemporalAsignado == 7){
             ultimoTemporalAsignado = -1;
         }
+        //Recorrido para buscar temporales con variables guardables
         for(int x = 0; x < temporalesInt.length;x++){
             if(!temporalesInt[x].contains("Temp_") && ultimoTemporalAsignado < x){
                //escribimos el mips
@@ -326,6 +328,7 @@ public class Generador {
                return  resultado;
             }
         }
+        //Recorrido para buscar temporales con temporales
         for(int j = 0; j < temporalesInt.length;j++){
             if(temporalesInt[j].contains("Temp_") && ultimoTemporalAsignado < j){
                 temporalesInt[j] = id;
@@ -334,7 +337,8 @@ public class Generador {
                 return resultado;
             }
         }
-        if ( resultado == -1){ //en teoria no creo que caiga aquí
+        //Caso extremo, no debería llegar aquí
+        if ( resultado == -1){
             resultado = tempIntLleno;
             temporalesInt[tempIntLleno] = id;
             tempIntLleno += 1;
