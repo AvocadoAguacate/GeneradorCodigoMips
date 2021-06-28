@@ -185,7 +185,7 @@ public class Generador {
     private void asignacionesFloat(String p1, String p2, int numeroLinea) {
         String id = p1.replace("Float_", "").replace(" ", "");
         if(p2.contains("+")){
-            sumaCase(id,p2);
+            sumaCase(id,p2,false);
         } else if(p2.contains("-")){
             restaCase(id,p2);
         } else if(p2.contains("/")){
@@ -218,7 +218,7 @@ public class Generador {
     private void asignacionInt(String p1, String p2, int numeroLinea){
         String id = p1.replace("Int_", "").replace(" ", "");
         if(p2.contains("+")){
-            sumaCase(id,p2);
+            sumaCase(id,p2,true);
         } else if(p2.contains("-")){
             restaCase(id,p2);
         } else if(p2.contains(">") || p2.contains("<") ||
@@ -352,16 +352,24 @@ public class Generador {
      * @param id sería el p1 en p1 = op1 + op2 
      * @param p2 p2 = op1 + op2 en p1 = op1 + op2
      */
-    private void sumaCase(String id,String p2){
+    private void sumaCase(String id,String p2, boolean entero){
         String[] operandos = p2.split("\\+");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
-        String add = "addi";
-        if(operando2.contains("$t")){
-            add = "add";
+        if(entero){
+            String add = "addi";
+            if(operando2.contains("$t")){
+                add = "add";
+            }
+            int temporalInt = getTemporalInt(id);
+            text += add + " $t"+ temporalInt + "," + operando1 + "," + operando2 
+                    + "\n"; 
+        } else {
+            int temporalFloat = getTemporalFloat(id);
+            text += "add.s $f" + temporalFloat + "," + operando1 + "," + operando2 
+                    + "\n";
         }
-        int temporalInt = getTemporalInt(id);
-        text += add + " $t"+ temporalInt +"," + operando1 + "," + operando2 + "\n"; 
+        
     }
     
     /**
@@ -598,9 +606,17 @@ public class Generador {
             int indexTemp = getPosTempOrPila(id,true); //aqui revisa si está en un temporal o si está en pila y lo carga
             return "$t" + indexTemp;
         } else if(id.contains("Float_")){
-            System.out.println("Todavía no perro");
+            int indexTemp = getPosTempOrPila(id,false);
+            return "$f" + indexTemp;
         } else if(id.contains(".")){
-            System.out.println("Todavíá no perro x2");
+            //Guardando en el generador
+            id = id.replace(" ", "");
+            int indexTemp = getTemporalFloat(id);
+            String mipsTemp = "$f" + indexTemp;
+            //Guardando en mips
+            text += "#Se carga un temporal para " + id + " en $f" + indexTemp + "\n";
+            text += "li.s " + mipsTemp + "," + id + "\n";
+            return mipsTemp;
         } else { // entero explicito
             //Guardando en el generador
             id = id.replace(" ", "");
@@ -611,7 +627,6 @@ public class Generador {
             text += "li " + mipsTemp + "," + id + "\n";
             return mipsTemp;
         }
-        return id;
     }
     
     /**
