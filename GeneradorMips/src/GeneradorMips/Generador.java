@@ -14,6 +14,7 @@ import java.util.ArrayList;
 public class Generador {
     private String[] source;
     private String[] temporalesInt;
+    private String[] temporalesFloat;
     private ArrayList<Token> pila;
     private String data;
     private String text;
@@ -23,7 +24,9 @@ public class Generador {
     public Generador(String source){
         
         String temporales_int[] = {"","","","","","","",""};
+        String temporales_float[] = {"","","","","","","",""};
         temporalesInt = temporales_int;
+        temporalesFloat = temporales_float;
         ultimoTemporalAsignado = -1;
         tempIntLleno = 0;
         this.source = source.split("\n");
@@ -122,16 +125,28 @@ public class Generador {
         }
     }
     
+    /**
+     * Se encarga de una llamada de función, encuentra el destino y lo escribe
+     * @param linea la linea a traducir
+     */
     private void callCase(String linea){
         String destino = linea.replace("call ", "");
         text += "jal "+ destino + "\n";
     }
     
+    /**
+     * Se encarga de los casos goto
+     * @param linea la linea a traducir
+     */
     private void goCase(String linea){
         linea = linea.replace("goto ", "").replace(" ", "");
         text += "j " + linea + "\n";
     }
     
+    /**
+     * Se encarga del caso if
+     * @param linea linea if a traducir
+     */
     private void ifCase(String linea){
         linea = linea.replace("if ", "");
         String[] lineaIf = linea.split("goto");
@@ -142,6 +157,11 @@ public class Generador {
         text+= "beq " + condicionMips + ", 1, " + destino + "\n";
     }
     
+    /**
+     * Se encarga de todas las lineas que contengan un =
+     * @param linea linea a traducir
+     * @param numeroLinea numero de linea 
+     */
     private void asignaciones(String linea,int numeroLinea){
         String[] split = linea.split("=",2);
         String p1 = split[0];
@@ -154,6 +174,12 @@ public class Generador {
         }
     }
     
+    /**
+     * Se encarga de las asignaciones tipo float
+     * @param p1 sería el p1 en p1 = op1 op op2
+     * @param p2 p2 = op1 op op2 en p1 = op1 op op2
+     * @param numeroLinea numero de linea
+     */
     private void asignacionesFloat(String p1, String p2, int numeroLinea) {
         String id = p1.replace("Float_", "").replace(" ", "");
         if(p2.contains("+")){
@@ -171,11 +197,22 @@ public class Generador {
         }
     }
     
+    /**
+     * Guarda los string en data
+     * @param p1 id del string
+     * @param p2 string a guardar
+     */
     private void asignacionString(String p1,String p2){
         String id = p1.replace("String_", "").replace(" ", "");
         data += id + " : .asciiz " + p2 + "\n"; 
     }
     
+    /**
+     * Encargado de las asignaciones de enteros
+     * @param p1 sería el p1 en p1 = op1 op op2
+     * @param p2 p2 = op1 op op2 en p1 = op1 op op2
+     * @param numeroLinea numero de linea
+     */
     private void asignacionInt(String p1, String p2, int numeroLinea){
         String id = p1.replace("Int_", "").replace(" ", "");
         if(p2.contains("+")){
@@ -197,6 +234,11 @@ public class Generador {
         }
     }
     
+    /**
+     * Se encarga de la operación residuo
+     * @param id sería el p1 en p1 = op1 op op2 
+     * @param p2 p2 = op1 op op2 en p1 = op1 ~ op2
+     */
     private void modCase(String id,String p2){
         String idMips = "$t" + getTemporalInt(id);
         String[] operandos = p2.split("~");
@@ -206,6 +248,11 @@ public class Generador {
         text += "mfhi " + idMips + "\n";
     }
     
+    /**
+     * Se encarga de la operacion multiplicacion
+     * @param id sería el p1 en p1 = op1 op op2 
+     * @param p2 p2 = op1 op op2 en p1 = op1 * op2
+     */
     private void multiplicacionCase(String id, String p2) {
         String idMips = "$t" + getTemporalInt(id);
         String[] operandos = p2.split("\\*");
@@ -215,6 +262,11 @@ public class Generador {
         text += "mflo " + idMips + "\n";
     }
     
+    /**
+     * Se encarga de la operacion división
+     * @param id sería el p1 en p1 = op1 op op2 
+     * @param p2 p2 = op1 op op2 en p1 = op1 / op2
+     */
     private void divisionCase(String id,String p2){
         String idMips = "$t" + getTemporalInt(id);
         String[] operandos = p2.split("/");
@@ -224,6 +276,12 @@ public class Generador {
         text += "mflo " + idMips + "\n";
     }
     
+    /**
+     * Se encarga de la operacion = sencilla
+     * @param id sería el p1 en p1 = op1 
+     * @param p2 p2 = op1 en p1 = op1
+     * @param entero indica si el caso es entero (true) o flotante (false)
+     */
     private void liCase(String id, String p2, boolean entero){
         //Encontrar el temporal de su tipo
         String idMips = "";
@@ -249,6 +307,12 @@ public class Generador {
         }
     }
     
+    /**
+     * Se encarga de la operacion comparación
+     * @param id sería el p1 en p1 = op1 op op2 
+     * @param p2 p2 = op1 op op2 en p1 = op1 op op2
+     * @param numeroLinea linea de codigo
+     */
     private void comparacionesCase(String id, String p2, int numeroLinea){
         if(p2.contains(">")){
            String[] operandos = p2.split(">");
@@ -281,6 +345,11 @@ public class Generador {
         }
     }
     
+    /**
+     * Se encarga de la operacion suma
+     * @param id sería el p1 en p1 = op1 + op2 
+     * @param p2 p2 = op1 + op2 en p1 = op1 + op2
+     */
     private void sumaCase(String id,String p2){
         String[] operandos = p2.split("\\+");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
@@ -293,6 +362,11 @@ public class Generador {
         text += add + " $t"+ temporalInt +"," + operando1 + "," + operando2 + "\n"; 
     }
     
+    /**
+     * Se encarga de la operacion resta
+     * @param id sería el p1 en p1 = op1 - op2 
+     * @param p2 p2 = op1 - op2 en p1 = op1 - op2
+     */
     private void restaCase(String id,String p2){
         String[] operandos = p2.split("\\-");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
@@ -305,6 +379,10 @@ public class Generador {
         text += "subi $t"+ temporalInt +"," + operando1 + "," + operando2 + "\n"; 
     }
     
+    /**
+     * Se encarga de los casos return, actualmente solo lee el caso return 0 ( fin de main ) 
+     * @param linea 
+     */
     private void returnCase(String linea){
         if(linea.contains("return 0")){
             text += "#return 0\n";
@@ -312,6 +390,10 @@ public class Generador {
         }
     }
     
+    /**
+     * Print
+     * @param linea linea de codigo a traducir
+     */
     private void writeCase(String linea){
         if(linea.contains("String_")){ //caso de imprimir un string
             String id = linea.replace("write", "").replace("(", "").replace(")", "")
@@ -338,6 +420,12 @@ public class Generador {
         }
     }
     
+    /**
+     * Encargado de buscar temporales y asignar variables a los mismos. En caso
+     * de ser necesario libera registros guardando en pila 
+     * @param id el nuevo registro
+     * @return numero del registro 
+     */
     private int getTemporalInt(String id){
         int resultado = -1;
         //Recorrido para buscar temporales vacios
@@ -389,10 +477,21 @@ public class Generador {
         return resultado;
     }
     
+     /**
+     * Encargado de buscar temporales y asignar variables a los mismos. En caso
+     * de ser necesario libera registros guardando en pila 
+     * @param id el nuevo registro
+     * @return numero del registro 
+     */
     private int getTemporalFloat(String id) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
+    /**
+     * Busca una variable en los temporales
+     * @param id id de la variable a buscar
+     * @return numero de registro buscado
+     */
     private int getPosTempInt(String id){
         System.out.println("getPosTempInt");
         System.out.println(id);
@@ -413,6 +512,21 @@ public class Generador {
     }
     
     /**
+     * Busca una variable en los temporales
+     * @param id id de la variable a buscar
+     * @return numero de registro buscado
+     */
+    private int getPosTempFloat(String id) {
+        id = id.replaceAll(" ", "");
+        for (int i = 0; i < temporalesFloat.length; i++){
+            if(temporalesFloat[i].equals(id)){
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    /**
      * La idea es calcular el numero relativo a la posición de SP
      * lw   $t0, #($sp) donde #es el numero relativo deseado
      * @param id el nombre de la variable en la pila para obtener su posición en la pila
@@ -424,6 +538,11 @@ public class Generador {
         return SpActual - SpDeseado;
     }
     
+    /**
+     * Se encargada de los operandos, retorna el registro necesario 
+     * @param id el imput del operando, puede ser un entero o flotante explicito 
+     * @return el registro del operando, $t# o $f#
+     */
     private String getOperando(String id){
         if(id.contains("Int_")){
             id = id.replace("Int_", "");
@@ -446,6 +565,13 @@ public class Generador {
         return id;
     }
     
+    /**
+     * Se encarga de revisar un id en los temporales o la pila, en caso de pila 
+     * se encarga de cargarlo en temporal
+     * @param id id de la variable a buscar
+     * @param entero indica si es entero (true) o flotante(false)
+     * @return numero del temporal donde ahora se encuentra la variable
+     */
     private int getPosTempOrPila(String id, boolean entero){
         //buscar en temporales
         int tempIndex = -1;
@@ -492,9 +618,5 @@ public class Generador {
         return result;
     }
 
-    private int getPosTempFloat(String id) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 
-    
 }
