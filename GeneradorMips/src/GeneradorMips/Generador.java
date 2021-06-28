@@ -291,7 +291,7 @@ public class Generador {
             String id = linea.replace("write", "").replace("(", "").replace(")", "")
                     .replace("Int_", "");
             int tempPos = getPosTempOrPila(id);
-            String idMips = "$" + tempPos;
+            String idMips = "$t" + tempPos;
             text += "li $v0, 1\n"
                     + "move $a0, " + idMips + 
                     "\nsyscall\n";
