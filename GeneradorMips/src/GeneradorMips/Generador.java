@@ -19,7 +19,9 @@ public class Generador {
     private String data;
     private String text;
     private int tempIntLleno; 
-    private int ultimoTemporalAsignado;
+    private int tempFloatLleno;
+    private int ultimoTemporalAsignadoInt;
+    private int ultimoTemporalAsignadoFloat;
     
     public Generador(String source){
         
@@ -27,8 +29,10 @@ public class Generador {
         String temporales_float[] = {"","","","","","","",""};
         temporalesInt = temporales_int;
         temporalesFloat = temporales_float;
-        ultimoTemporalAsignado = -1;
+        ultimoTemporalAsignadoInt = -1;
+        ultimoTemporalAsignadoFloat = -1;
         tempIntLleno = 0;
+        tempFloatLleno = 0;
         this.source = source.split("\n");
         pila = new ArrayList<Token>();
         data = ".data\n";
@@ -66,10 +70,8 @@ public class Generador {
      * @param token token por agregar
      */
     public void addToken(String id, int size){ //cambiar a private al final
-        if(getToken(id) == null){
-            Token temp = new Token(id,size,getSiguientePosicion());
-            pila.add(temp);
-        }
+        Token temp = new Token(id,size,getSiguientePosicion());
+        pila.add(temp);
     }
     
     /**
@@ -433,16 +435,16 @@ public class Generador {
             if(temporalesInt[i].length() == 0){
                 temporalesInt[i] = id;
                 resultado = i;
-                ultimoTemporalAsignado = i;
+                ultimoTemporalAsignadoInt = i;
                 return resultado;
             }
         }
-        if(ultimoTemporalAsignado == 7){
-            ultimoTemporalAsignado = -1;
+        if(ultimoTemporalAsignadoInt == 7){
+            ultimoTemporalAsignadoInt = -1;
         }
         //Recorrido para buscar temporales con variables guardables
         for(int x = 0; x < temporalesInt.length;x++){
-            if(!temporalesInt[x].contains("Temp_") && ultimoTemporalAsignado < x){
+            if(!temporalesInt[x].contains("Temp_") && ultimoTemporalAsignadoInt < x){
                //escribimos el mips
                text += "#liberando el temporal $t" + x + ", y guardando en pila a " + temporalesInt[x] + "\n";
                text += "sub $sp, $sp, 4\n"; //ajustamos el puntero sp
@@ -452,16 +454,16 @@ public class Generador {
                temporalesInt[x] = id;
                //retornamos el espacio liberado
                resultado = x;
-               ultimoTemporalAsignado = x;
+               ultimoTemporalAsignadoInt = x;
                return  resultado;
             }
         }
         //Recorrido para buscar temporales con temporales
         for(int j = 0; j < temporalesInt.length;j++){
-            if(temporalesInt[j].contains("Temp_") && ultimoTemporalAsignado < j){
+            if(temporalesInt[j].contains("Temp_") && ultimoTemporalAsignadoInt < j){
                 temporalesInt[j] = id;
                 resultado = j;
-                ultimoTemporalAsignado = j;
+                ultimoTemporalAsignadoInt = j;
                 return resultado;
             }
         }
@@ -484,7 +486,54 @@ public class Generador {
      * @return numero del registro 
      */
     private int getTemporalFloat(String id) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        int resultado = -1;
+        //Recorrido para buscar temporales vacios
+        for(int i = 0; i < temporalesFloat.length; i++){
+            if(temporalesFloat[i].length() == 0){
+                temporalesFloat[i] = id;
+                resultado = i;
+                ultimoTemporalAsignadoFloat = i;
+                return resultado;
+            }
+        }
+        if(ultimoTemporalAsignadoFloat == 7){
+            ultimoTemporalAsignadoFloat = -1;
+        }
+        //Recorrido para buscar temporales con variables guardables
+        for(int x = 0; x < temporalesFloat.length;x++){
+            if(!temporalesFloat[x].contains("Temp_") && ultimoTemporalAsignadoFloat < x){
+               //escribimos el mips
+               text += "#liberando el temporal $t" + x + ", y guardando en pila a " + temporalesFloat[x] + "\n";
+               text += "sub $sp, $sp, 4\n"; //ajustamos el puntero sp
+               text += "sw $t"+ x + ", 0 ($sp)\n"; //guardar en pila a $tx
+               //guardamos en la pila en java la información necesaria
+               addToken(temporalesFloat[x],4);
+               temporalesFloat[x] = id;
+               //retornamos el espacio liberado
+               resultado = x;
+               ultimoTemporalAsignadoFloat = x;
+               return  resultado;
+            }
+        }
+        //Recorrido para buscar temporales con temporales
+        for(int j = 0; j < temporalesFloat.length;j++){
+            if(temporalesFloat[j].contains("Temp_") && ultimoTemporalAsignadoFloat < j){
+                temporalesFloat[j] = id;
+                resultado = j;
+                ultimoTemporalAsignadoFloat = j;
+                return resultado;
+            }
+        }
+        //Caso extremo, no debería llegar aquí
+        if ( resultado == -1){
+            resultado = tempFloatLleno;
+            temporalesFloat[tempFloatLleno] = id;
+            tempFloatLleno += 1;
+            if(tempFloatLleno == 8){
+                tempFloatLleno = 0;
+            }
+        }
+        return resultado;
     }
     
     /**
@@ -497,7 +546,7 @@ public class Generador {
         System.out.println(id);
         System.out.println(tempToString());
         id = id.replaceAll(" ", "");
-        for (int i = 0; i < temporalesInt.length; i++){
+        for (int i = temporalesInt.length-1; i > -1; i--){
             System.out.println(id);
             System.out.println(temporalesInt[i]);
             System.out.println("("+id+")("+temporalesInt[i]+")");
@@ -518,7 +567,7 @@ public class Generador {
      */
     private int getPosTempFloat(String id) {
         id = id.replaceAll(" ", "");
-        for (int i = 0; i < temporalesFloat.length; i++){
+        for (int i = temporalesFloat.length-1; i > -1; i--){
             if(temporalesFloat[i].equals(id)){
                 return i;
             }
