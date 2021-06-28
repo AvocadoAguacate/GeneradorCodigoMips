@@ -209,11 +209,11 @@ public class Generador {
         String p2Clear = p2.replaceAll(" ", "");
         String idMips = "$t" + getTemporalInt(id);
         String suma = "";
-        if (p2.contains("Int_")) {
-            suma = p2Clear + " + 0";
-            sumaCase(id,suma);
-        } else {
-            text += "addi " + idMips + ",$zero," + p2Clear + "\n";
+        if (p2.contains("Int_")) { // var = otraVar
+            String operando1 = getOperando(p2Clear);
+            text += "move " + idMips + "," + operando1 + "\n";
+        } else { // var = integer
+            text += "li " + idMips + "," + p2Clear + "\n";
         }
     }
     
@@ -385,6 +385,19 @@ public class Generador {
             id = id.replace("Int_", "");
             int indexTemp = getPosTempOrPila(id); //aqui revisa si está en un temporal o si está en pila y lo carga
             return "$t" + indexTemp;
+        } else if(id.contains("Float_")){
+            System.out.println("Todavía no perro");
+        } else if(id.contains(".")){
+            System.out.println("Todavíá no perro x2");
+        } else { // entero explicito
+            //Guardando en el generador
+            id = id.replace(" ", "");
+            int indexTemp = getTemporalInt(id);
+            String mipsTemp = "$t" + indexTemp;
+            //Guardando en mips
+            text += "#Se carga un temporal para " + id + " en $t" + indexTemp + "\n";
+            text += "li " + mipsTemp + "," + id + "\n";
+            return mipsTemp;
         }
         return id;
     }
@@ -400,7 +413,8 @@ public class Generador {
             //escribir el mips
             text += "# Cargar desde la pila a " + id + " en el temporal $t" + 
                     indexTemporal + "\n";
-            text += "lw $t" + indexTemporal + ", " + getSpRelativo(id) + "($sp)\n";
+            int spRelativo = getSpRelativo(id);
+            text += "lw $t" + indexTemporal + ", " + spRelativo + "($sp)\n";
             return indexTemporal;
         }
     }
