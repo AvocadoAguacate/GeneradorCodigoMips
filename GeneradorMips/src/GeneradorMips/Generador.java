@@ -187,13 +187,11 @@ public class Generador {
         if(p2.contains("+")){
             sumaCase(id,p2,false);
         } else if(p2.contains("-")){
-            restaCase(id,p2);
+            restaCase(id,p2,false);
         } else if(p2.contains("/")){
-            divisionCase(id,p2);
+            divisionCase(id,p2,false);
         } else if(p2.contains("*")){
-            multiplicacionCase(id,p2);
-        } else if(p2.contains("~")){
-            modCase(id,p2);
+            multiplicacionCase(id,p2,false);
         } else {
             liCase(id,p2,false);
         }
@@ -220,15 +218,15 @@ public class Generador {
         if(p2.contains("+")){
             sumaCase(id,p2,true);
         } else if(p2.contains("-")){
-            restaCase(id,p2);
+            restaCase(id,p2,true);
         } else if(p2.contains(">") || p2.contains("<") ||
                 p2.contains("==") || p2.contains("&") ||
                 p2.contains("|")){
             comparacionesCase(id,p2,numeroLinea);
         } else if(p2.contains("/")){
-            divisionCase(id,p2);
+            divisionCase(id,p2,true);
         } else if(p2.contains("*")){
-            multiplicacionCase(id,p2);
+            multiplicacionCase(id,p2,true);
         } else if(p2.contains("~")){
             modCase(id,p2);
         } else {
@@ -255,13 +253,19 @@ public class Generador {
      * @param id sería el p1 en p1 = op1 op op2 
      * @param p2 p2 = op1 op op2 en p1 = op1 * op2
      */
-    private void multiplicacionCase(String id, String p2) {
-        String idMips = "$t" + getTemporalInt(id);
+    private void multiplicacionCase(String id, String p2,boolean entero) {
         String[] operandos = p2.split("\\*");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
-        text += "mult " + operando1 + ", " + operando2 + "\n";
-        text += "mflo " + idMips + "\n";
+        if(entero){
+            String idMips = "$t" + getTemporalInt(id);
+            text += "mult " + operando1 + ", " + operando2 + "\n";
+            text += "mflo " + idMips + "\n";
+        } else { //floatante
+            String idMips = "$f" + getTemporalInt(id);
+            text += "mul.s " + idMips + "," + operando1 + "," + operando2 + "\n";
+        }
+        
     }
     
     /**
@@ -269,13 +273,20 @@ public class Generador {
      * @param id sería el p1 en p1 = op1 op op2 
      * @param p2 p2 = op1 op op2 en p1 = op1 / op2
      */
-    private void divisionCase(String id,String p2){
-        String idMips = "$t" + getTemporalInt(id);
+    private void divisionCase(String id,String p2,boolean entero){
+        
         String[] operandos = p2.split("/");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
-        text += "div " + operando1 + ", " + operando2 + "\n";
-        text += "mflo " + idMips + "\n";
+        if(entero){
+            String idMips = "$t" + getTemporalInt(id);
+            text += "div " + operando1 + ", " + operando2 + "\n";
+            text += "mflo " + idMips + "\n";
+        } else {
+            String idMips = "$f" + getTemporalFloat(id);
+            text += "div.s "+ idMips + "," + operando1 + "," + operando2;
+        }
+        
     }
     
     /**
@@ -364,7 +375,7 @@ public class Generador {
             int temporalInt = getTemporalInt(id);
             text += add + " $t"+ temporalInt + "," + operando1 + "," + operando2 
                     + "\n"; 
-        } else {
+        } else { //flotante
             int temporalFloat = getTemporalFloat(id);
             text += "add.s $f" + temporalFloat + "," + operando1 + "," + operando2 
                     + "\n";
@@ -377,16 +388,24 @@ public class Generador {
      * @param id sería el p1 en p1 = op1 - op2 
      * @param p2 p2 = op1 - op2 en p1 = op1 - op2
      */
-    private void restaCase(String id,String p2){
+    private void restaCase(String id,String p2,boolean entero){
         String[] operandos = p2.split("\\-");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
-        String sub = "subi";
-        if(operando2.contains("$t")){
-            sub = "sub";
+        if (entero) {
+            String sub = "subi";
+            if (operando2.contains("$t")) {
+                sub = "sub";
+            }
+            int temporalInt = getTemporalInt(id);
+            text += "subi $t" + temporalInt + "," + operando1 + "," + operando2 
+                    + "\n";
+        } else { //flotante
+            int temporalFloat = getTemporalFloat(id);
+            text += "sub.s $f" + temporalFloat + "," + operando1 + "," + operando2 
+                    + "\n";
         }
-        int temporalInt = getTemporalInt(id);
-        text += "subi $t"+ temporalInt +"," + operando1 + "," + operando2 + "\n"; 
+        
     }
     
     /**
