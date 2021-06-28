@@ -137,7 +137,7 @@ public class Generador {
         String[] lineaIf = linea.split("goto");
         String condicion = lineaIf[0].replace(" ", "").replace("Int_", "");
         String destino = lineaIf[1].replace(" ", "");
-        int indexTemp = getPosTempOrPila(condicion); //aqui revisa si está en un temporal o si está en pila y lo carga
+        int indexTemp = getPosTempOrPila(condicion,true); //aqui revisa si está en un temporal o si está en pila y lo carga
         String condicionMips = "$t" + indexTemp;
         text+= "beq " + condicionMips + ", 1, " + destino + "\n";
     }
@@ -149,7 +149,26 @@ public class Generador {
             asignacionString(p1,split[1]);
         } else if (p1.contains("Int_")){
             asignacionInt(p1,split[1],numeroLinea);
-        } 
+        } else if (p1.contains("Float_")){
+            asignacionesFloat(p1,split[1],numeroLinea);
+        }
+    }
+    
+    private void asignacionesFloat(String p1, String p2, int numeroLinea) {
+        String id = p1.replace("Float_", "").replace(" ", "");
+        if(p2.contains("+")){
+            sumaCase(id,p2);
+        } else if(p2.contains("-")){
+            restaCase(id,p2);
+        } else if(p2.contains("/")){
+            divisionCase(id,p2);
+        } else if(p2.contains("*")){
+            multiplicacionCase(id,p2);
+        } else if(p2.contains("~")){
+            modCase(id,p2);
+        } else {
+            liCase(id,p2,false);
+        }
     }
     
     private void asignacionString(String p1,String p2){
@@ -174,7 +193,7 @@ public class Generador {
         } else if(p2.contains("~")){
             modCase(id,p2);
         } else {
-            liCase(id,p2);
+            liCase(id,p2,true);
         }
     }
     
@@ -205,13 +224,26 @@ public class Generador {
         text += "mflo " + idMips + "\n";
     }
     
-    private void liCase(String id, String p2){
+    private void liCase(String id, String p2, boolean entero){
+        //Encontrar el temporal de su tipo
+        String idMips = "";
+        if(entero){
+            idMips = "$t" + getTemporalInt(id); 
+        } else {
+            idMips = "$f" + getTemporalFloat(id);
+        }
+        
         String p2Clear = p2.replaceAll(" ", "");
-        String idMips = "$t" + getTemporalInt(id);
-        String suma = "";
-        if (p2.contains("Int_")) { // var = otraVar
+        
+        //Encontrar si es explicito o implicito
+        if (p2.contains("Int_")) { // Int var = otraVar
             String operando1 = getOperando(p2Clear);
             text += "move " + idMips + "," + operando1 + "\n";
+        } else if (p2.contains("Float_")){ // Float var = otraVar
+            String operando1 = getOperando(p2Clear);
+            text += "mov.s " + idMips + "," + operando1 + "\n";
+        } else if(p2.contains(".")){ //var = float
+            text += "li.s " + idMips + "," + p2Clear + "\n";
         } else { // var = integer
             text += "li " + idMips + "," + p2Clear + "\n";
         }
@@ -275,7 +307,7 @@ public class Generador {
     
     private void returnCase(String linea){
         if(linea.contains("return 0")){
-            text += "# return 0\n";
+            text += "#return 0\n";
             text += "li $v0, 10\nsyscall";
         }
     }
@@ -290,10 +322,18 @@ public class Generador {
         } else if(linea.contains("Int_")) {
             String id = linea.replace("write", "").replace("(", "").replace(")", "")
                     .replace("Int_", "");
-            int tempPos = getPosTempOrPila(id);
+            int tempPos = getPosTempOrPila(id,true);
             String idMips = "$t" + tempPos;
             text += "li $v0, 1\n"
                     + "move $a0, " + idMips + 
+                    "\nsyscall\n";
+        } else if(linea.contains("Float_")){
+            String id = linea.replace("write", "").replace("(", "").replace(")", "")
+                    .replace("Float_", "");
+            int tempPos = getPosTempOrPila(id,false);
+            String idMips = "$f" + tempPos;
+            text += "li $v0, 2\n"
+                    + "mov.s $f12, " + idMips + 
                     "\nsyscall\n";
         }
     }
@@ -316,7 +356,7 @@ public class Generador {
         for(int x = 0; x < temporalesInt.length;x++){
             if(!temporalesInt[x].contains("Temp_") && ultimoTemporalAsignado < x){
                //escribimos el mips
-               text += "# liberando el temporal $t" + x + ", y guardando en pila a " + temporalesInt[x] + "\n";
+               text += "#liberando el temporal $t" + x + ", y guardando en pila a " + temporalesInt[x] + "\n";
                text += "sub $sp, $sp, 4\n"; //ajustamos el puntero sp
                text += "sw $t"+ x + ", 0 ($sp)\n"; //guardar en pila a $tx
                //guardamos en la pila en java la información necesaria
@@ -349,6 +389,10 @@ public class Generador {
         return resultado;
     }
     
+    private int getTemporalFloat(String id) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
     private int getPosTempInt(String id){
         System.out.println("getPosTempInt");
         System.out.println(id);
@@ -370,7 +414,7 @@ public class Generador {
     
     /**
      * La idea es calcular el numero relativo a la posición de SP
-     * lw   $t0, # ($sp) donde # es el numero relativo deseado
+     * lw   $t0, #($sp) donde #es el numero relativo deseado
      * @param id el nombre de la variable en la pila para obtener su posición en la pila
      * @return  el numero relativo deseado
      */
@@ -383,7 +427,7 @@ public class Generador {
     private String getOperando(String id){
         if(id.contains("Int_")){
             id = id.replace("Int_", "");
-            int indexTemp = getPosTempOrPila(id); //aqui revisa si está en un temporal o si está en pila y lo carga
+            int indexTemp = getPosTempOrPila(id,true); //aqui revisa si está en un temporal o si está en pila y lo carga
             return "$t" + indexTemp;
         } else if(id.contains("Float_")){
             System.out.println("Todavía no perro");
@@ -402,19 +446,36 @@ public class Generador {
         return id;
     }
     
-    private int getPosTempOrPila(String id){
+    private int getPosTempOrPila(String id, boolean entero){
         //buscar en temporales
-        int tempIndex = getPosTempInt(id);
+        int tempIndex = -1;
+        if(entero){
+            tempIndex = getPosTempInt(id);
+        } else {
+            tempIndex = getPosTempFloat(id);
+        }
+        //devolver temporal en caso de que exista
         if(tempIndex > -1){
             return tempIndex;
-        } else {
+        } else { //buscar en pila 
             //hay que cargar desde la pila
-            int indexTemporal = getTemporalInt(id); //en la función se asigna el id al temporal cedido
-            //escribir el mips
-            text += "# Cargar desde la pila a " + id + " en el temporal $t" + 
-                    indexTemporal + "\n";
-            int spRelativo = getSpRelativo(id);
-            text += "lw $t" + indexTemporal + ", " + spRelativo + "($sp)\n";
+            int indexTemporal = -1;
+            if (entero) {
+                indexTemporal = getTemporalInt(id); //en la función se asigna el id al temporal cedido
+                //escribir el mips
+                text += "#Cargar desde la pila a " + id + " en el temporal $t"
+                        + indexTemporal + "\n";
+                int spRelativo = getSpRelativo(id);
+                text += "lw $t" + indexTemporal + ", " + spRelativo + "($sp)\n";
+            } else {
+                //falta la parte de pila 
+                indexTemporal = getTemporalFloat(id); //en la función se asigna el id al temporal cedido
+                //escribir el mips
+                text += "#Cargar desde la pila a " + id + " en el temporal $f"
+                        + indexTemporal + "\n";
+                int spRelativo = getSpRelativo(id);
+                text += "l.s $f" + indexTemporal + ", " + spRelativo + "($sp)\n";
+            }
             return indexTemporal;
         }
     }
@@ -429,6 +490,10 @@ public class Generador {
             result += id + ",";
         }
         return result;
+    }
+
+    private int getPosTempFloat(String id) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     
