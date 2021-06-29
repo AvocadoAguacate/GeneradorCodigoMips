@@ -103,7 +103,6 @@ public class Generador {
     private void traducir(){
         for(int i = 0; i < source.length; i++){
             if(source[i].contains("=")){ //asignaciones
-                text += "#" + source[i] + "\n";
                 asignaciones(source[i],i);
             } else if (source[i].contains(":") && !source[i].contains("#") && !source[i].contains("\"")){ //etiqueta
                 text += source[i] + "\n";
@@ -168,11 +167,12 @@ public class Generador {
         String[] split = linea.split("=",2);
         String p1 = split[0];
         if(p1.contains("String_")){
+            data += "#" + linea + "\n";
             asignacionString(p1,split[1]);
         } else if (p1.contains("Int_")){
-            asignacionInt(p1,split[1],numeroLinea);
+            asignacionInt(p1,split[1],numeroLinea,linea);
         } else if (p1.contains("Float_")){
-            asignacionesFloat(p1,split[1],numeroLinea);
+            asignacionesFloat(p1,split[1],numeroLinea,linea);
         }
     }
     
@@ -182,18 +182,20 @@ public class Generador {
      * @param p2 p2 = op1 op op2 en p1 = op1 op op2
      * @param numeroLinea numero de linea
      */
-    private void asignacionesFloat(String p1, String p2, int numeroLinea) {
+    private void asignacionesFloat(String p1, String p2, int numeroLinea,String linea) {
         String id = p1.replace("Float_", "").replace(" ", "");
         if(p2.contains("+")){
-            sumaCase(id,p2,false);
+            sumaCase(id,p2,false,linea);
         } else if(p2.contains("-")){
-            restaCase(id,p2,false);
+            restaCase(id,p2,false,linea);
         } else if(p2.contains("/")){
-            divisionCase(id,p2,false);
+            divisionCase(id,p2,false,linea);
         } else if(p2.contains("*")){
-            multiplicacionCase(id,p2,false);
-        } else {
-            liCase(id,p2,false);
+            multiplicacionCase(id,p2,false,linea);
+        } else if(p2.contains("read()")){
+            readCase(id,p2,false,linea);
+        }  else {
+            liCase(id,p2,false,linea);
         }
     }
     
@@ -213,32 +215,33 @@ public class Generador {
      * @param p2 p2 = op1 op op2 en p1 = op1 op op2
      * @param numeroLinea numero de linea
      */
-    private void asignacionInt(String p1, String p2, int numeroLinea){
+    private void asignacionInt(String p1, String p2, int numeroLinea, String linea){
         String id = p1.replace("Int_", "").replace(" ", "");
         if(p2.contains("+")){
-            sumaCase(id,p2,true);
+            sumaCase(id,p2,true,linea);
         } else if(p2.contains("-")){
-            restaCase(id,p2,true);
+            restaCase(id,p2,true,linea);
         } else if(p2.contains(">") || p2.contains("<") ||
                 p2.contains("==") || p2.contains("&") ||
                 p2.contains("|")){
-            comparacionesCase(id,p2,numeroLinea);
+            comparacionesCase(id,p2,numeroLinea,linea);
         } else if(p2.contains("/")){
-            divisionCase(id,p2,true);
+            divisionCase(id,p2,true,linea);
         } else if(p2.contains("*")){
-            multiplicacionCase(id,p2,true);
+            multiplicacionCase(id,p2,true,linea);
         } else if(p2.contains("~")){
-            modCase(id,p2);
+            modCase(id,p2,linea);
         } else if(p2.contains("read()")){
-            readCase(id,p2,false);
-        }else {
-            liCase(id,p2,true);
+            readCase(id,p2,true,linea);
+        } else {
+            liCase(id,p2,true,linea);
         }
     }
     
-    private void readCase(String id,String p2,boolean entero){
+    private void readCase(String id,String p2,boolean entero,String linea){
         if(entero){
             //Se solicita el input en mips
+            text += "#" + linea + "\n";
             text += "#Se solicita el entero\n";
             text += "li $v0, 5\nsyscall\n";
             //Se solicita el temporal en java
@@ -256,6 +259,7 @@ public class Generador {
                addToken(temporalesFloat[0],4); 
             }
             //Se solicita el input en mips
+            text += "#" + linea + "\n";
             text += "#Se solicita el flotante\n";
             text += "li $v0, 6\nsyscall\n";
             //Se solicita el temporal en java
@@ -270,11 +274,12 @@ public class Generador {
      * @param id sería el p1 en p1 = op1 op op2 
      * @param p2 p2 = op1 op op2 en p1 = op1 ~ op2
      */
-    private void modCase(String id,String p2){
+    private void modCase(String id,String p2,String linea){
         String idMips = "$t" + getTemporalInt(id);
         String[] operandos = p2.split("~");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
+        text += "#" + linea + "\n";
         text += "div " + operando1 + ", " + operando2 + "\n";
         text += "mfhi " + idMips + "\n";
     }
@@ -284,16 +289,18 @@ public class Generador {
      * @param id sería el p1 en p1 = op1 op op2 
      * @param p2 p2 = op1 op op2 en p1 = op1 * op2
      */
-    private void multiplicacionCase(String id, String p2,boolean entero) {
+    private void multiplicacionCase(String id, String p2,boolean entero,String linea) {
         String[] operandos = p2.split("\\*");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
         if(entero){
             String idMips = "$t" + getTemporalInt(id);
+            text += "#" + linea + "\n";
             text += "mult " + operando1 + ", " + operando2 + "\n";
             text += "mflo " + idMips + "\n";
         } else { //floatante
             String idMips = "$f" + getTemporalInt(id);
+            text += "#" + linea + "\n";
             text += "mul.s " + idMips + "," + operando1 + "," + operando2 + "\n";
         }
         
@@ -304,17 +311,18 @@ public class Generador {
      * @param id sería el p1 en p1 = op1 op op2 
      * @param p2 p2 = op1 op op2 en p1 = op1 / op2
      */
-    private void divisionCase(String id,String p2,boolean entero){
-        
+    private void divisionCase(String id,String p2,boolean entero,String linea){
         String[] operandos = p2.split("/");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
         if(entero){
             String idMips = "$t" + getTemporalInt(id);
+            text += "#" + linea + "\n";
             text += "div " + operando1 + ", " + operando2 + "\n";
             text += "mflo " + idMips + "\n";
         } else {
             String idMips = "$f" + getTemporalFloat(id);
+            text += "#" + linea + "\n";
             text += "div.s "+ idMips + "," + operando1 + "," + operando2 + "\n";
         }
         
@@ -326,7 +334,7 @@ public class Generador {
      * @param p2 p2 = op1 en p1 = op1
      * @param entero indica si el caso es entero (true) o flotante (false)
      */
-    private void liCase(String id, String p2, boolean entero){
+    private void liCase(String id, String p2, boolean entero,String linea){
         //Encontrar el temporal de su tipo
         String idMips = "";
         if(entero){
@@ -340,13 +348,17 @@ public class Generador {
         //Encontrar si es explicito o implicito
         if (p2.contains("Int_")) { // Int var = otraVar
             String operando1 = getOperando(p2Clear);
+            text += "#" + linea + "\n";
             text += "move " + idMips + "," + operando1 + "\n";
         } else if (p2.contains("Float_")){ // Float var = otraVar
             String operando1 = getOperando(p2Clear);
+            text += "#" + linea + "\n";
             text += "mov.s " + idMips + "," + operando1 + "\n";
         } else if(p2.contains(".")){ //var = float
+            text += "#" + linea + "\n";
             text += "li.s " + idMips + "," + p2Clear + "\n";
         } else { // var = integer
+            text += "#" + linea + "\n";
             text += "li " + idMips + "," + p2Clear + "\n";
         }
     }
@@ -357,7 +369,7 @@ public class Generador {
      * @param p2 p2 = op1 op op2 en p1 = op1 op op2
      * @param numeroLinea linea de codigo
      */
-    private void comparacionesCase(String id, String p2, int numeroLinea){
+    private void comparacionesCase(String id, String p2, int numeroLinea,String linea){
         if(p2.contains(">")){
            String[] operandos = p2.split(">");
            String op1 = operandos[0].replace(" ", ""); 
@@ -365,12 +377,14 @@ public class Generador {
            String operando1 = getOperando(op1);
            String operando2 = getOperando(op2);
            int temporalInt = getTemporalInt(id);
+           text += "#" + linea + "\n";
            text += "slt $t"+ temporalInt + "," + operando2 + "," + operando1 + "\n"; 
         } else if(p2.contains("<")){
            String[] operandos = p2.split("\\<");
            String operando1 = getOperando(operandos[0].replace(" ", ""));
            String operando2 = getOperando(operandos[1].replace(" ", ""));
            int temporalInt = getTemporalInt(id);
+           text += "#" + linea + "\n";
            text += "slt $t"+ temporalInt + "," + operando1 + "," + operando2 + "\n"; 
         } else if(p2.contains("==")){
            System.out.println("Aun no está ==");
@@ -379,12 +393,14 @@ public class Generador {
            String operando1 = getOperando(operandos[0].replace(" ", ""));
            String operando2 = getOperando(operandos[1].replace(" ", ""));
            int temporalInt = getTemporalInt(id);
+           text += "#" + linea + "\n";
            text += "and $t"+ temporalInt + "," + operando1 + "," + operando2 + "\n";
         } else if(p2.contains("|")){
            String[] operandos = p2.split("\\|");
            String operando1 = getOperando(operandos[0].replace(" ", ""));
            String operando2 = getOperando(operandos[1].replace(" ", ""));
            int temporalInt = getTemporalInt(id);
+           text += "#" + linea + "\n";
            text += "or $t"+ temporalInt + "," + operando1 + "," + operando2 + "\n";
         }
     }
@@ -394,7 +410,7 @@ public class Generador {
      * @param id sería el p1 en p1 = op1 + op2 
      * @param p2 p2 = op1 + op2 en p1 = op1 + op2
      */
-    private void sumaCase(String id,String p2, boolean entero){
+    private void sumaCase(String id,String p2, boolean entero,String linea){
         String[] operandos = p2.split("\\+");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
@@ -404,13 +420,16 @@ public class Generador {
                 add = "add";
             }
             int temporalInt = getTemporalInt(id);
+            text += "#" + linea + "\n";
             text += add + " $t"+ temporalInt + "," + operando1 + "," + operando2 
                     + "\n"; 
         } else { //flotante
             int temporalFloat = getTemporalFloat(id);
+            text += "#" + linea + "\n";
             text += "add.s $f" + temporalFloat + "," + operando1 + "," + operando2 
                     + "\n";
         }
+        
         
     }
     
@@ -419,7 +438,7 @@ public class Generador {
      * @param id sería el p1 en p1 = op1 - op2 
      * @param p2 p2 = op1 - op2 en p1 = op1 - op2
      */
-    private void restaCase(String id,String p2,boolean entero){
+    private void restaCase(String id,String p2,boolean entero,String linea){
         String[] operandos = p2.split("\\-");
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
@@ -429,10 +448,12 @@ public class Generador {
                 sub = "sub";
             }
             int temporalInt = getTemporalInt(id);
+            text += "#" + linea + "\n";
             text += "subi $t" + temporalInt + "," + operando1 + "," + operando2 
                     + "\n";
         } else { //flotante
             int temporalFloat = getTemporalFloat(id);
+            text += "#" + linea + "\n";
             text += "sub.s $f" + temporalFloat + "," + operando1 + "," + operando2 
                     + "\n";
         }
