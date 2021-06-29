@@ -229,8 +229,39 @@ public class Generador {
             multiplicacionCase(id,p2,true);
         } else if(p2.contains("~")){
             modCase(id,p2);
-        } else {
+        } else if(p2.contains("read()")){
+            readCase(id,p2,false);
+        }else {
             liCase(id,p2,true);
+        }
+    }
+    
+    private void readCase(String id,String p2,boolean entero){
+        if(entero){
+            //Se solicita el input en mips
+            text += "#Se solicita el entero\n";
+            text += "li $v0, 5\nsyscall\n";
+            //Se solicita el temporal en java
+            String idMips = "$t" + getTemporalInt(id);
+            //Se copia el input en un registro 
+            text += "#Se copia el read() en " + idMips + "\n";
+            text += "move " + idMips + ",$v0\n";
+        } else { //flotante
+            //reviso si $f0 esta ocupado
+            if(temporalesFloat[0].length() > 0 && !temporalesFloat[0].contains("Temp_")){
+               text += "#liberando el temporal $f0, y guardando en pila a " + temporalesFloat[0] + "\n";
+               text += "sub $sp, $sp, 4\n"; //ajustamos el puntero sp
+               text += "s.s $f0, 0 ($sp)\n"; //guardar en pila a $tx
+               //guardamos en la pila en java la información necesaria
+               addToken(temporalesFloat[0],4); 
+            }
+            //Se solicita el input en mips
+            text += "#Se solicita el flotante\n";
+            text += "li $v0, 6\nsyscall\n";
+            //Se solicita el temporal en java
+            String idMips = "$f" + getTemporalFloat(id);
+            text += "#Se copia el read() en " + idMips + "\n";
+            text += "mov.s " + idMips + ",$f0\n";
         }
     }
     
@@ -284,7 +315,7 @@ public class Generador {
             text += "mflo " + idMips + "\n";
         } else {
             String idMips = "$f" + getTemporalFloat(id);
-            text += "div.s "+ idMips + "," + operando1 + "," + operando2;
+            text += "div.s "+ idMips + "," + operando1 + "," + operando2 + "\n";
         }
         
     }
@@ -530,9 +561,9 @@ public class Generador {
         for(int x = 0; x < temporalesFloat.length;x++){
             if(!temporalesFloat[x].contains("Temp_") && ultimoTemporalAsignadoFloat < x){
                //escribimos el mips
-               text += "#liberando el temporal $t" + x + ", y guardando en pila a " + temporalesFloat[x] + "\n";
+               text += "#liberando el temporal $f" + x + ", y guardando en pila a " + temporalesFloat[x] + "\n";
                text += "sub $sp, $sp, 4\n"; //ajustamos el puntero sp
-               text += "sw $t"+ x + ", 0 ($sp)\n"; //guardar en pila a $tx
+               text += "s.s $f"+ x + ", 0 ($sp)\n"; //guardar en pila a $tx
                //guardamos en la pila en java la información necesaria
                addToken(temporalesFloat[x],4);
                temporalesFloat[x] = id;
