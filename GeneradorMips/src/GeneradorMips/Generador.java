@@ -419,10 +419,16 @@ public class Generador {
             if(operando2.contains("$t")){
                 add = "add";
             }
-            int temporalInt = getTemporalInt(id);
             text += "#" + linea + "\n";
-            text += add + " $t"+ temporalInt + "," + operando1 + "," + operando2 
-                    + "\n"; 
+            if(operandos[0].replace(" ","").equals("Int_"+id)){
+                text += add + " "+ operando1 + "," + operando1 + "," 
+                        + operando2 + "\n"; 
+            } else {
+                int temporalInt = getTemporalInt(id);
+                text += add + " $t"+ temporalInt + "," + operando1 + "," 
+                        + operando2 + "\n"; 
+            }
+            
         } else { //flotante
             int temporalFloat = getTemporalFloat(id);
             text += "#" + linea + "\n";
