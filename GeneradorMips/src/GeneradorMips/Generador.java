@@ -449,13 +449,9 @@ public class Generador {
         String operando1 = getOperando(operandos[0].replace(" ", ""));
         String operando2 = getOperando(operandos[1].replace(" ", ""));
         if (entero) {
-            String sub = "subi";
-            if (operando2.contains("$t")) {
-                sub = "sub";
-            }
             int temporalInt = getTemporalInt(id);
             text += "#" + linea + "\n";
-            text += "subi $t" + temporalInt + "," + operando1 + "," + operando2 
+            text += "sub $t" + temporalInt + "," + operando1 + "," + operando2 
                     + "\n";
         } else { //flotante
             int temporalFloat = getTemporalFloat(id);
@@ -473,7 +469,7 @@ public class Generador {
     private void returnCase(String linea){
         if(linea.contains("return 0")){
             text += "#return 0\n";
-            text += "li $v0, 10\nsyscall";
+            text += "li $v0, 10\nsyscall\n";
         }
     }
     
@@ -683,6 +679,7 @@ public class Generador {
             int indexTemp = getPosTempOrPila(id,true); //aqui revisa si está en un temporal o si está en pila y lo carga
             return "$t" + indexTemp;
         } else if(id.contains("Float_")){
+            id = id.replace("Float_", "");
             int indexTemp = getPosTempOrPila(id,false);
             return "$f" + indexTemp;
         } else if(id.contains(".")){
@@ -754,6 +751,13 @@ public class Generador {
     public String tempToString(){
         String result = "";
         for(String id:temporalesInt){
+            result += id + ",";
+        }
+        return result;
+    }
+    public String tempFToString(){
+        String result = "";
+        for(String id:temporalesFloat){
             result += id + ",";
         }
         return result;
